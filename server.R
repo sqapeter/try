@@ -7,6 +7,7 @@ library(dplyr)
 library(ggplot2)
 # try issue1
 # try issue3
+# update calculate map function
 
 TWD97TM2toWGS84 <- function (input_lat, input_lon){  
   # input_lat: TWD97橫座標, 南北緯度, latitude N
@@ -99,14 +100,6 @@ shinyServer(function(input, output) {
       m <- m %>% addPolylines(tarData$long , tarData$lat , color = "red" , group = "Pipe Map")
     }
     
-    for(i in 1:shp_g_q){
-      tarData <- nshp_1860_df[which(nshp_1860_df$group==shp_g[i]),]
-      reLong <- median(tarData$long)
-      reLat <- median(tarData$lat)
-      m <- m %>% addMarkers(reLong , reLat , label=shp_g[i] , group = "point" ,labelOptions=labelOptions(textsize="25px") , popup=shp_1860@data$ROAD[i])
-    }
-    
-    
     max_long <- max(temp1$lon)
     min_long <- min(temp1$lon)
     max_lat <- max(temp1$lat)
@@ -117,10 +110,64 @@ shinyServer(function(input, output) {
     lat1 <- sum(max_lat,lat2)/2
     lat3 <- sum(min_lat,lat2)/2
     
-    m <- m %>% addRectangles(max_long , lat1 , min_long ,max_lat, color = "red" , group = "area Map")
-    m <- m %>% addRectangles(max_long , lat2 , min_long ,lat1, color = "red" , group = "area Map")
-    m <- m %>% addRectangles(max_long , lat3 , min_long ,lat2, color = "red" , group = "area Map")
-    m <- m %>% addRectangles(max_long , min_lat , min_long ,lat3, color = "red" , group = "area Map")
+    m <- m %>% addRectangles(max_long , lat1 , min_long ,max_lat, color = "red" , group = "area Map 1")
+    m <- m %>% addRectangles(max_long , lat2 , min_long ,lat1, color = "red" , group = "area Map 2")
+    m <- m %>% addRectangles(max_long , lat3 , min_long ,lat2, color = "red" , group = "area Map 3")
+    m <- m %>% addRectangles(max_long , min_lat , min_long ,lat3, color = "red" , group = "area Map 4")
+    
+    t1<-0
+    t2<-0
+    t3<-0
+    t4<-0
+    for(i in 1:shp_g_q){
+      tarData <- nshp_1860_df[which(nshp_1860_df$group==shp_g[i]),]
+      reLong <- median(tarData$long)
+      reLat <- median(tarData$lat)
+      if(reLong <= max_long && reLong>= min_long){
+        if(reLat<=max_lat && reLat >= lat1){
+          m <- m %>% addMarkers(reLong , reLat , label=shp_g[i] , group = "point 1" ,labelOptions=labelOptions(textsize="25px") , popup=shp_1860@data$ROAD[i])
+          t1<-t1+1
+        }
+      }
+    }
+    
+    for(i in 1:shp_g_q){
+      tarData <- nshp_1860_df[which(nshp_1860_df$group==shp_g[i]),]
+      reLong <- median(tarData$long)
+      reLat <- median(tarData$lat)
+      if(reLong <= max_long && reLong>= min_long){
+        if(reLat<=lat1 && reLat >= lat2){
+          m <- m %>% addMarkers(reLong , reLat , label=shp_g[i] , group = "point 2" ,labelOptions=labelOptions(textsize="25px") , popup=shp_1860@data$ROAD[i])
+          t2<-t2+1
+        }
+      }
+    }
+    
+    for(i in 1:shp_g_q){
+      tarData <- nshp_1860_df[which(nshp_1860_df$group==shp_g[i]),]
+      reLong <- median(tarData$long)
+      reLat <- median(tarData$lat)
+      if(reLong <= max_long && reLong>= min_long){
+        if(reLat<=lat2 && reLat >= lat3){
+          m <- m %>% addMarkers(reLong , reLat , label=shp_g[i] , group = "point 3" ,labelOptions=labelOptions(textsize="25px") , popup=shp_1860@data$ROAD[i])
+          t3<-t3+1
+        }
+      }
+    }
+    
+    for(i in 1:shp_g_q){
+      tarData <- nshp_1860_df[which(nshp_1860_df$group==shp_g[i]),]
+      reLong <- median(tarData$long)
+      reLat <- median(tarData$lat)
+      if(reLong <= max_long && reLong>= min_long){
+        if(reLat<=lat3 && reLat >= min_lat){
+          m <- m %>% addMarkers(reLong , reLat , label=shp_g[i] , group = "point 4" ,labelOptions=labelOptions(textsize="25px") , popup=shp_1860@data$ROAD[i])
+          t4<-t4+1
+        }
+      }
+    }
+    print(paste("t1 : ",t1,"| t2 : ",t2,"| t3 : ",t3,"| t4 : ",t4," | ",t1+t2+t3+t4))    
+    
     
     
     # for(i in 1:shp_g_q){
@@ -135,7 +182,8 @@ shinyServer(function(input, output) {
     # }
     
     # 有關label的部份，應可直接取用中文路名，但目前問題為1．資料缺漏；2．編碼方式需研究
-    m <- m %>% addCircleMarkers(121.8686, 24.57625,label="南安國中_監測站",labelOptions=labelOptions(noHide=T,textsize="25px")) %>% addLayersControl(overlayGroups = c("Pipe Map","point","area Map"))
+    m <- m %>% addCircleMarkers(121.8686, 24.57625,label="南安國中_監測站",labelOptions=labelOptions(noHide=T,textsize="25px")) %>% 
+      addLayersControl(overlayGroups = c("Pipe Map","point 1","point 2","point 3","point 4","area Map 1","area Map 2","area Map 3","area Map 4"))
     
     # m <- m %>% addMarkers(121.8686, 24.57625, label="南安國中_監測站",labelOptions=labelOptions(noHide=T,textsize="25px")) %>% addLayersControl(overlayGroups = as.character(g_i),
     #                                                                                                                                     options = layersControlOptions(collapsed = FALSE))
